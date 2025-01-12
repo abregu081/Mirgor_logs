@@ -111,7 +111,7 @@ def guardar_resultados_completos(directorio_salida):
     )
     with open(ruta_salida, mode='w', newline='', encoding='utf-8') as archivo_final:
         escritor = csv.writer(archivo_final)
-        escritor.writerow(["Date", "Time", "Barcode", "Step","Hostname","Station","jig","Result"])
+        escritor.writerow(["Date", "Time", "Barcode", "Step","Hostname","Station","jig","Testime","Result"])
         for registro in registros_ordenados:
             escritor.writerow(registro)
     print(f"Archivos combinados, ordenados y guardados en {ruta_salida}")
@@ -148,7 +148,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, fecha_actual, proc
                 # Si el archivo no existe, crearlo y escribir los registros
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Date", "Time", "Barcode", "Step", "Hostname", "Station", "Jig", "Result"])
+                    csv_writer.writerow(["Date", "Time", "Barcode", "Step","Hostname","Station","jig","Testime","Result"])
                     csv_writer.writerows(registros_jig_ordenados)
                 print(f"Registros guardados en {output_file}")
                 break
@@ -171,7 +171,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, fecha_actual, proc
                 os.remove(output_file)  # Eliminar archivo existente
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Date", "Time", "Barcode", "Step", "Hostname", "Station", "Jig", "Result"])
+                    csv_writer.writerow(["Date", "Time", "Barcode", "Step","Hostname","Station","jig","Testime","Result"])
                     csv_writer.writerows(registros_combinados_ordenados)
                 print(f"Registros combinados y guardados en {output_file}")
                 break
@@ -233,28 +233,39 @@ for root, dirs, files in os.walk(input_dir):
     for file in files:
         if file.endswith(".csv"):
             file_path = os.path.join(root, file)
-            # Verificar si el archivo ya ha sido procesado
             if file_path in archivos_procesados:
-                #print(f"Archivo ya procesado: {file_path}")
                 continue
-            print(f"Procesando archivo: {file_path}")
+            if mode == "dev":
+                print(f"Procesando archivo: {file_path}")
             folder_name = os.path.basename(root)
-            date_str, formatted_time, barcode_part, jig = extraer_fecha_y_hora(folder_name, file)
+            date_str, formatted_time, barcode_part,jig = extraer_fecha_y_hora(folder_name, file)
+            testime = "N/A"
             try:
                 with open(file_path, mode="r", encoding="ISO-8859-1") as f:
                     csv_reader = csv.reader(f)
                     next(csv_reader, None) 
-                    resultados_fail = [fila[0] for fila in csv_reader if any("FAIL" in col.upper() for col in fila)]
+                    filas = list(csv_reader)
+                    for fila in reversed(filas):
+                        for col in fila:
+                            if "TEST-TIME" in col.upper():
+                                try:
+                                    testime = col.split(':')[1].strip()
+                                    break
+                                except IndexError:
+                                    testime = "N/A"
+                        if testime is not None:
+                            break
+                    
+                    resultados_fail = [fila[0] for fila in filas if any("FAIL" in col.upper() for col in fila)]
                     if resultados_fail:
                         result = "FAIL"
-                        step = " ".join(resultados_fail) 
+                        step = " ".join(resultados_fail)
                     else:
                         result = default_result
                         step = "PASS" if default_result == "PASS" else "N/A"
-                    registros.append([date_str, formatted_time, barcode_part, step, hostname ,station, jig ,result])
+                    registros.append([date_str, formatted_time, barcode_part, step, hostname,station, jig ,testime,result])
             except Exception as e:
                 print(f"Error al procesar el archivo {file_path}: {e}")
-                
             actualizar_registro_archivos(registro_archivos_path, archivos_procesados, file_path)
 print(f"Total de registros procesados: {len(registros)}")
 dividir_y_guardar_por_fecha(registros, directorio_salida, fecha_actual, procesar_todos=True)

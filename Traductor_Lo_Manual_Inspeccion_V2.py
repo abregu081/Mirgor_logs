@@ -10,6 +10,7 @@ import re
 from collections import defaultdict
 from datetime import datetime, timedelta
 from collections import Counter
+from collections import deque
 
 #--------------------------------------------------------------------------------------------
                                 #Funciones del programa
@@ -69,11 +70,6 @@ def extraer_fecha_y_hora(folder_name, file_name):
         formatted_time = "Unknown"
     return date_str, formatted_time, barcode_part
 
-def obtener_estacion(hostaname):
-    nombre = hostaname
-    station = nombre[-3:]
-    return station
-
 def guardar_log(directorio, fecha_str, jig):
     nombre_archivo = f"{model}_{medio}_{code}_{fecha_str}_0{jig}.csv"
     output_file = os.path.join(directorio, nombre_archivo)
@@ -100,14 +96,14 @@ def guardar_resultados_completos(directorio_salida):
     )
     with open(ruta_salida, mode='w', newline='', encoding='utf-8') as archivo_final:
         escritor = csv.writer(archivo_final)
-        escritor.writerow(["Date", "Time", "Barcode", "Step","Hostname","Station","jig","Result"])
+        escritor.writerow(["Date", "Time", "Barcode", "Step","Hostname","Station","jig","Testime","Result"])
         for registro in registros_ordenados:
             escritor.writerow(registro)
     print(f"Archivos combinados, ordenados y guardados en {ruta_salida}")
 
 def dividir_y_guardar_por_fecha(registros, directorio_salida, fecha_actual, procesar_todos=False):
     registros_por_fecha = defaultdict(list)
-    
+
     # Agrupar los registros por fecha
     for registro in registros:
         fecha = registro[0]
@@ -130,7 +126,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, fecha_actual, proc
                 # Si el archivo no existe, crearlo y escribir los registros
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Date", "Time", "Barcode", "Step","Hostname","Station","jig","Result"])
+                    csv_writer.writerow(["Date", "Time", "Barcode", "Step","Hostname","Station","jig","Testime","Result"])
                     csv_writer.writerows(registros_fecha_ordenados)
                 print(f"Registros guardados en {output_file}")
                 break
@@ -148,7 +144,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, fecha_actual, proc
                 os.remove(output_file)
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Date", "Time", "Barcode", "Step", "Station", "Result"])
+                    csv_writer.writerow(["Date", "Time", "Barcode", "Step", "Station","Testime","Result"])
                     csv_writer.writerows(registros_combinados_ordenados)
                 print(f"Registros combinados y guardados en {output_file}")
                 break
@@ -177,7 +173,10 @@ def actualizar_registro_archivos(registro_archivos_path, archivos_procesados, ar
         for archivo in archivos_procesados:
             file.write(f"{archivo}\n")
 
-
+def obtener_Estacion(hostname):
+    data = hostname
+    estacion = data[-3:]
+    return estacion
 
 #-----------------------inicio-----------------------------
 cfg_file = obtener_ruta_cfg()
@@ -187,11 +186,11 @@ input_dir = settings.get("input_dir", "")
 directorio_salida = settings.get("directorio_salida", "") 
 mode = settings.get("mode", "")
 code = settings.get("code","")
-medio = settings.get("medio", "")
+medio = settings.get("Medio", "")
 fecha_actual = datetime.now().strftime("%Y%m%d")
 Crear_directorio_salida(directorio_salida)
 hostname = obtener_hostname()
-station = obtener_estacion(hostname)
+station = obtener_Estacion(hostname)
 registro_archivos_path = r"C:\DGS\log\archivos_procesados.txt"
 archivos_procesados = cargar_archivos_procesados(registro_archivos_path)
 registros = []
@@ -207,29 +206,39 @@ for root, dirs, files in os.walk(input_dir):
     for file in files:
         if file.endswith(".csv"):
             file_path = os.path.join(root, file)
-            # Verificar si el archivo ya ha sido procesado
             if file_path in archivos_procesados:
-                #print(f"Archivo ya procesado: {file_path}")
                 continue
             if mode == "dev":
                 print(f"Procesando archivo: {file_path}")
             folder_name = os.path.basename(root)
             date_str, formatted_time, barcode_part = extraer_fecha_y_hora(folder_name, file)
+            testime = "N/A"
             try:
                 with open(file_path, mode="r", encoding="ISO-8859-1") as f:
                     csv_reader = csv.reader(f)
                     next(csv_reader, None) 
-                    resultados_fail = [fila[0] for fila in csv_reader if any("FAIL" in col.upper() for col in fila)]
+                    filas = list(csv_reader)
+                    for fila in reversed(filas):
+                        for col in fila:
+                            if "TEST-TIME" in col.upper():
+                                try:
+                                    testime = col.split(':')[1].strip()
+                                    break
+                                except IndexError:
+                                    testime = "N/A"
+                        if testime is not None:
+                            break
+                    
+                    resultados_fail = [fila[0] for fila in filas if any("FAIL" in col.upper() for col in fila)]
                     if resultados_fail:
                         result = "FAIL"
-                        step = " ".join(resultados_fail)  # Unir los pasos en una sola cadena con espacios
+                        step = " ".join(resultados_fail)
                     else:
                         result = default_result
                         step = "PASS" if default_result == "PASS" else "N/A"
-                    registros.append([date_str, formatted_time, barcode_part, step, hostname,station, jig ,result])
+                    registros.append([date_str, formatted_time, barcode_part, step, hostname,station, jig ,testime,result])
             except Exception as e:
                 print(f"Error al procesar el archivo {file_path}: {e}")
-            # Agregar el nuevo registro a la lista de procesados
             actualizar_registro_archivos(registro_archivos_path, archivos_procesados, file_path)
 print(f"Total de registros procesados: {len(registros)}")
 dividir_y_guardar_por_fecha(registros, directorio_salida, fecha_actual, procesar_todos=True)
