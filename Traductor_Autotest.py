@@ -192,7 +192,7 @@ def extraer_fecha(archivo):
 
 def obtener_estacion(hostaname):
     nombre = hostaname
-    station = nombre[-3:]
+    station = nombre[-1:]
     return station
 
 def actualizar_registro_archivos(registro_archivos_path, archivos_procesados, archivo_nuevo):

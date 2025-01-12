@@ -175,7 +175,7 @@ def actualizar_registro_archivos(registro_archivos_path, archivos_procesados, ar
 
 def obtener_Estacion(hostname):
     data = hostname
-    estacion = data[-3:]
+    estacion = data[-1:]
     return estacion
 
 #-----------------------inicio-----------------------------
