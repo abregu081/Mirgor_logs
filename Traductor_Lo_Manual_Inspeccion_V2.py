@@ -96,7 +96,7 @@ def guardar_resultados_completos(directorio_salida):
     )
     with open(ruta_salida, mode='w', newline='', encoding='utf-8') as archivo_final:
         escritor = csv.writer(archivo_final)
-        escritor.writerow(["Date", "Time", "Barcode", "Step","Hostname","Station","jig","Testime","Result"])
+        escritor.writerow(["Date", "Time", "Barcode", "Step","Hostname","Station","Jig","TestTime","Result"])
         for registro in registros_ordenados:
             escritor.writerow(registro)
     print(f"Archivos combinados, ordenados y guardados en {ruta_salida}")
@@ -126,7 +126,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, fecha_actual, proc
                 # Si el archivo no existe, crearlo y escribir los registros
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Date", "Time", "Barcode", "Step","Hostname","Station","jig","Testime","Result"])
+                    csv_writer.writerow(["Date", "Time", "Barcode", "Step","Hostname","Station","Jig","TestTime","Result"])
                     csv_writer.writerows(registros_fecha_ordenados)
                 print(f"Registros guardados en {output_file}")
                 break
@@ -144,7 +144,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, fecha_actual, proc
                 os.remove(output_file)
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Date", "Time", "Barcode", "Step", "Station","Testime","Result"])
+                    csv_writer.writerow(["Date", "Time", "Barcode", "Step","Hostname","Station","Jig","TestTime","Result"])
                     csv_writer.writerows(registros_combinados_ordenados)
                 print(f"Registros combinados y guardados en {output_file}")
                 break
