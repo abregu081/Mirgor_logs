@@ -219,7 +219,7 @@ fecha_actual = datetime.now().strftime("%Y%m%d")
 Crear_directorio_salida(directorio_salida)
 hostname = obtener_hostname()
 station = obtener_estacion(hostname)
-registro_archivos_path = r"D:\Data\Autotest_Inspeccion\WKPRG1UNA1AI3\archivos_procesados.txt"
+registro_archivos_path = r"C:\DGS\log\archivos_procesados.txt"
 archivos_procesados = cargar_archivos_procesados(registro_archivos_path)
 registros = []
 
