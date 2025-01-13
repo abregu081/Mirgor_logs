@@ -1,6 +1,7 @@
 #Diciembre 2024. Abregu Tomas para proyecto Motrex/Fiat. Mirgor
 
 #version 1.0: primera implementacion filtrado de logs y creacion de estructura de datos
+
 import socket
 import os
 import csv
