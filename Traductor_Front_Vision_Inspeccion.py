@@ -151,48 +151,56 @@ def obtener_Estacion(hostname):
     estacion = data[-1:]
     return estacion
 
-def procesar_archivo(ruta_archivo, hostname, station):
+def procesar_archivo(ruta_archivo, hostname, station, mode="prod"):
     registros = []
     try:
         if mode == "dev":
             print(f"Procesando archivo: {ruta_archivo}")
+        
         with open(ruta_archivo, mode="r", encoding="utf-8") as archivo_csv:
             lector = csv.reader(archivo_csv)
-            encabezado = next(lector)  # Leer encabezado
-            primera_fila = next(lector)  # Leer primera fila de datos
+            encabezado = next(lector)
+            primera_fila = next(lector)
 
+            # Extraer datos comunes de la primera fila
             date, barcode, start_time, end_time, tact_time, result = primera_fila[:6]
+            steps_con_ng = []  # Lista para almacenar los pasos con "NG"
 
             if result == "FAIL":
                 # Procesar todas las filas buscando "NG"
                 for fila in lector:
-                    if len(fila) >= 8 and fila[7] == "NG":
-                        registros.append([
-                            date,  # "Date"
-                            start_time,  # "Time"
-                            barcode,  # "Barcode"
-                            fila[2],  # "Step" (nombre del paso)
-                            hostname,  # "Hostname"
-                            station,  # "Station"
-                            "1",  # "Jig" (se asume Jig=1 siempre para Manual Inspección)
-                            tact_time,  # "TestTime"
-                            result  # "Result"
-                        ])
+                    if len(fila) >= 8 and fila[7] == "NG":  # Verifica si la fila tiene "NG"
+                        steps_con_ng.append(fila[2])  # Agregar el nombre del paso (Step)
+
+                # Concatenar los nombres de los pasos con "-"
+                steps_concatenados = "-".join(steps_con_ng)
+                registros.append([
+                    date,               # "Date"
+                    start_time,         # "Time"
+                    barcode,            # "Barcode"
+                    steps_concatenados, # "Steps" concatenados
+                    hostname,           # "Hostname"
+                    station,            # "Station"
+                    "1",                # "Jig" (se asume Jig=1 siempre para este puesto)
+                    tact_time,          # "TestTime"
+                    result              # "Result"
+                ])
             else:  # Caso PASS
                 registros.append([
-                    date,  # "Date"
-                    start_time,  # "Time"
-                    barcode,  # "Barcode"
-                    "PASS",  # "Step" (no hay paso relevante para PASS)
-                    hostname,  # "Hostname"
-                    station,  # "Station"
-                    "1",  # "Jig" (se asume Jig=1 siempre para Manual Inspección)
-                    tact_time,  # "TestTime"
-                    result  # "Result"
+                    date,           # "Date"
+                    start_time,     # "Time"
+                    barcode,        # "Barcode"
+                    "PASS",         # "Step" (no hay paso relevante para PASS)
+                    hostname,       # "Hostname"
+                    station,        # "Station"
+                    "1",            # "Jig" (se asume Jig=1 siempre para este puesto)
+                    tact_time,      # "TestTime"
+                    result          # "Result"
                 ])
         return registros
     except Exception as e:
         print(f"Error al procesar el archivo {ruta_archivo}: {e}")
+        return []
 
 #-----------------------inicio-----------------------------
 cfg_file = obtener_ruta_cfg()
@@ -246,6 +254,3 @@ for carpeta_fecha in os.listdir(input_dir):
 print(f"Total de registros procesados: {len(registros_totales)}")
 dividir_y_guardar_por_fecha(registros_totales, directorio_salida, procesar_todos=True)
 guardar_resultados_completos(directorio_salida)
-
-
-                            
