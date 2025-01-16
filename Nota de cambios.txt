@@ -1,0 +1,13 @@
+los archivos denominados bind se van a utilizar para unificar los results generados en el root principal del
+directorio de salida. para realizar el procesamiento en power bi posteriormente
+
+pd: el .bat se va ultilizar para mover los ultimos 250 registros y copiar el results.csv
+
+
+-----------------------
+se agregaron funciones para leer, el hostname y sacar el nombre de la estacion
+
+
+
+
+
