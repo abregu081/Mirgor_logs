@@ -1,0 +1,49 @@
+Version 1.0
+
+Variables Globales
+------------------
+model = indica el modelo que se esta procesando
+input_dir = Directorio de entrada donde se toman los csv a procesar
+directorio_salida= Directorio donde van a parar los csv ya procesados
+Mode = muestra mas detalles o no del funcionamiento
+stacion = numero de estacion en que la se ejecutando
+code = codigo asignado a eleccion
+puesto = nombre del puesto donde se esta ejecutando
+
+
+Funciones generales
+----------------------
+
+read_setting(): lee los parametros del punto setting
+Crear_directorio_Salida(): Crea el directorio donde se guardan los log
+extraer_fecha_y_hora(): simplifica la forma en la que se extren los parametros para el procesamiento de los log
+guardar_log(): Crea el documento, junto con la estrutura para su nombre de salida
+guardar_resultados_completos(): Permita almacenar todos los registros en un solo csv filtrado y ordenado por fechas y horas
+dividir_y_guardar_por_fecha():  Se encarga de realizar el filtro de los registros para almacenar dichos registros en el archivo.csv que corresponda con la funcion de guadar log
+cargar_archivos_procesados(): almacena los ultimos 500 registros ordandos por fechas, para mejorar el procesamiento de los datos al no tener que procesar archivos ya previamente analizados
+extraer_fecha(): corresponde a una funcion de para cargar_Archivos_procesdos para mejorar su orden de salida
+actualizar_registro_archivo(): Se encarga de procesar los ultimos 500 registros, para luego llamar a la funcion cargar y subirlos
+
+
+Descripcion
+----------------------
+read_setting(): se leen los parametros
+Crear_directorio_Salida(): creamos el directorio de salida
+cargar_archivos_procesados(): Carga los ultimos 500 registros
+Main(): Analiza los registros dentro del directorio de entrada, filtra entre las carpetas pass y fail, agregando los registros a la lista, junto con su path
+actualizar_registros_archivo(): agrega los utimos registros procesados a al archivo de los ultimos 500 logs
+dividir_y_guardar_por_fecha(): crea los documentos con su formato base, junto con los registros ordenados por fecha y hora. Desde la lista de registros, no fueron procesados crea el archivo desde 0, si un nuevo registro coincide con la fecha almacena el valor dentro del archivo y lo ordena correctamente
+guar_resultados_completos(): se crea el crudo con todos los logs en general
+
+
+
+
+
+
+
+
+
+
+
+
+
