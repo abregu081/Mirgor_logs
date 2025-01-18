@@ -181,11 +181,9 @@ for carpeta_fecha in os.listdir(input_dir):
     try:
         if os.path.isdir(ruta_carpeta_fecha) and carpeta_fecha.isdigit() and len(carpeta_fecha) == 6:
             fecha = "20" + carpeta_fecha
-            print(f"Procesando carpeta de fecha: {carpeta_fecha}")
         else:
             print(f"Carpeta de fecha no válida {carpeta_fecha}")
             continue
-        
         for estado in ["FAIL", "PASS"]:
             carpeta_estado = os.path.join(ruta_carpeta_fecha, estado)
             if os.path.exists(carpeta_estado):
@@ -195,49 +193,34 @@ for carpeta_fecha in os.listdir(input_dir):
                         if ruta_archivo in archivos_procesados:
                             continue
                         try:
+                            registros_nuevos = []
                             with open(ruta_archivo, mode="r", encoding="ISO-8859-1") as f:
                                 csv_reader = csv.reader(f)
                                 next(csv_reader, None)  # Omitir encabezado
-
-                                # Leer solo la segunda fila para obtener start_time, total_time y barcode
-                                fila = next(csv_reader, None)  # Leer la segunda fila
-                                if fila and len(fila) >= 10:
-                                    # Solo tomamos la segunda fila (para evitar error de desestructuración)
+                                fila = next(csv_reader, None) 
+                                if fila and len(fila) >= 11:
                                     try:
-                                        start_time, total_time, barcode = fila[8], fila[9], fila[7]  # Usar las columnas correspondientes
+                                        start_time, total_time, barcode = fila[8], fila[10], fila[7]
                                     except Exception as e:
                                         print(f"Ocurrió un error al procesar la fila {fila}: {e}")
                                         continue
-                                    
-                                    # Determinamos el "Step" y el "Result" según la carpeta de "PASS" o "FAIL"
                                     if "PASS" in carpeta_estado:
                                         step = "PASS"
                                         result = "PASS"
                                     elif "FAIL" in carpeta_estado:
-                                        # Buscar 'NG' en el campo Test Name para obtener el paso
-                                        if len(fila) >= 6 and "NG" in fila[5]:
-                                            step = fila[5]  # Asignar el Test Name como Step si contiene 'NG'
-                                            result = "FAIL"
-                                        else:
-                                            step = "UNKNOWN"
-                                            result = "FAIL"
+                                        for fila in csv_reader:
+                                            if "NG" in fila:
+                                                step = fila[0]
+                                                result = "FAIL"
                                     else:
                                         step = "UNKNOWN"
                                         result = "UNKNOWN"
-
-                                    # Asignar el valor de fecha y otros campos
+                                    actualizar_registro_archivos(registro_archivos_path, archivos_procesados,ruta_archivo)
                                     registros.append([fecha, start_time, barcode, step, hostname, station, "1", total_time, result])
-                                    
                         except Exception as e:
                             print(f"Error al procesar el archivo {ruta_archivo}: {e}")
-        # Al finalizar el procesamiento de un día
     except Exception as e:
         print(f"Error al procesar la carpeta {carpeta_fecha}: {e}")
-
 print(f"Total de registros procesados: {len(registros)}")
-
-# Llamar a la función para dividir y guardar por fecha
 dividir_y_guardar_por_fecha(registros, directorio_salida, procesar_todos=True)
-
-# Guardar los resultados completos en el archivo final
 guardar_resultados_completos(directorio_salida)
