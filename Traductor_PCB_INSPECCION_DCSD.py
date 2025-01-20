@@ -36,7 +36,7 @@ def read_setting(file):
 
 def obtener_ruta_cfg():
     current_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
-    cfg_file = os.path.join(current_directory, "Setting_IQC.cfg")
+    cfg_file = os.path.join(current_directory, "Setting_PCB_INSPECCION_DCSD.cfg")
     return cfg_file
 
 def Crear_directorio_salida(directorio_salida):
