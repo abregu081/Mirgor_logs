@@ -236,7 +236,6 @@ for carpeta_fecha in os.listdir(input_dir):
                     carpeta_barcode = os.path.join(carpeta_estado, subcarpeta)
                     if not os.path.isdir(carpeta_barcode):
                         continue
-
                     for archivo in os.listdir(carpeta_barcode):
                         if archivo.endswith(".csv"):
                             ruta_archivo = os.path.join(carpeta_barcode, archivo)
@@ -254,3 +253,4 @@ for carpeta_fecha in os.listdir(input_dir):
 print(f"Total de registros procesados: {len(registros_totales)}")
 dividir_y_guardar_por_fecha(registros_totales, directorio_salida, procesar_todos=True)
 guardar_resultados_completos(directorio_salida)
+
