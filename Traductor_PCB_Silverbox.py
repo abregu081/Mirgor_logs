@@ -190,7 +190,6 @@ for carpeta_fecha in os.listdir(input_dir):
                 # Agregamos el manejo de subdirectorios dentro de carpeta_estado
                 for subdirectorio in os.listdir(carpeta_estado):
                     ruta_subdirectorio = os.path.join(carpeta_estado, subdirectorio)
-                    print(f"sub : {ruta_subdirectorio}")
                     if os.path.isdir(ruta_subdirectorio):
                         for archivo in os.listdir(ruta_subdirectorio):
                             if archivo.endswith(".csv"):
