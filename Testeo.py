@@ -2,7 +2,6 @@
 
 #version 1.0: primera implementacion filtrado de logs y creacion de estructura de datos
 
-import socket
 import os
 import csv
 import sys
@@ -11,16 +10,13 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from collections import Counter
 from collections import deque
+import platform
+import psutil
+import platform
+import shutil
 
 #--------------------------------------------------------------------------------------------
                                 #Funciones del programa
-
-def obtener_hostname():
-    try:
-        hostname = socket.gethostname()
-        return hostname
-    except Exception as e:
-        print("no se puedo obtener el hostame del equipo")
 
 def read_setting(file):
     setting = {}
@@ -55,7 +51,7 @@ def extraer_fecha_y_hora(folder_name, file_name):
     # Extraer la fecha del nombre de la carpeta
     if len(folder_name) == 6 and folder_name.isdigit():
         year, month, day = f"20{folder_name[:2]}", folder_name[2:4], folder_name[4:6]
-        date_str = f"{year}{month}{day}"
+        date_str = f"{year}/{month}/{day}"
     else:
         date_str = "Unknown"
     # Extraer partes del nombre del archivo
@@ -64,7 +60,7 @@ def extraer_fecha_y_hora(folder_name, file_name):
     if len(parts) == 3:
         date_part, barcode_part, _ = parts
         time_part = date_part[len(date_part) // 2:]
-        formatted_time = f"{time_part[:2]}{time_part[2:4]}{time_part[4:]}"
+        formatted_time = f"{time_part[:2]}:{time_part[2:4]}:{time_part[4:]}"
     else:
         barcode_part = "Unknown"
         formatted_time = "Unknown"
@@ -92,7 +88,7 @@ def guardar_resultados_completos(directorio_salida):
                 registros_unicos.add(tuple(fila))
     registros_ordenados = sorted(
         registros_unicos, 
-        key=lambda x: (x[0], x[1])  # Ordenar primero por "Date" (índice 0) y luego por "Time" (índice 1)
+        key=lambda x: (x[0], x[1]) 
     )
     with open(ruta_salida, mode='w', newline='', encoding='utf-8') as archivo_final:
         escritor = csv.writer(archivo_final)
@@ -103,8 +99,6 @@ def guardar_resultados_completos(directorio_salida):
 
 def dividir_y_guardar_por_fecha(registros, directorio_salida, fecha_actual, procesar_todos=False):
     registros_por_fecha = defaultdict(list)
-
-    # Agrupar los registros por fecha
     for registro in registros:
         combined_string = registro[0]  # Asegurándonos de obtener el string combinado correctamente
         try:
@@ -112,7 +106,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, fecha_actual, proc
             fecha = fecha_line.split(': ')[1].replace('/', '')  # Convertir fecha a formato 'YYYYMMDD'
         except IndexError as e:
             print(f"Error al extraer la fecha del registro: {e}")
-            continue  # Saltar este registro si hay un error
+            continue 
 
         if procesar_todos or fecha == fecha_actual:
             registros_por_fecha[fecha].append(combined_string)
@@ -181,10 +175,58 @@ def actualizar_registro_archivos(registro_archivos_path, archivos_procesados, ar
         for archivo in archivos_procesados:
             file.write(f"{archivo}\n")
 
-def obtener_Estacion(hostname):
-    data = hostname
-    estacion = data[-1:]
-    return estacion
+def determinar_grupo_prueba(test_condition):
+    for grupo, pruebas in grupos_pruebas.items():
+        if any(test_condition.startswith(prueba) for prueba in pruebas):
+            return grupo
+    return None
+
+def obtener_pc_cpu():
+    """Obtiene la frecuencia y el número de núcleos de la CPU."""
+    try:
+        freq = psutil.cpu_freq().current / 1000  # Convertir a GHz
+        cores = psutil.cpu_count(logical=False)  # Núcleos físicos
+        return f"{freq:.2f} GHz/{cores}-Core"
+    except Exception:
+        return "N/A"
+
+def obtener_pc_ram_available():
+    """Obtiene la memoria RAM disponible en MB."""
+    try:
+        memoria_virtual = psutil.virtual_memory()
+        return f"{memoria_virtual.available // (1024 ** 2)} MB"
+    except Exception:
+        return "N/A"
+
+def obtener_pc_ram_init_free():
+    """Obtiene la memoria RAM libre en KB."""
+    try:
+        memoria_virtual = psutil.virtual_memory()
+        return f"{memoria_virtual.free // 1024} KB"
+    except Exception:
+        return "N/A"
+
+def obtener_pc_disk_free_total():
+    """Obtiene el espacio libre y total del disco C: en MB."""
+    try:
+        disco = psutil.disk_usage("C:")
+        libre = disco.free // (1024 ** 2)
+        total = disco.total // (1024 ** 2)
+        return f"{libre}/{total} MB"
+    except Exception:
+        return "N/A"
+
+def obtener_pc_os():
+    """Obtiene el sistema operativo, versión y arquitectura."""
+    try:
+        sistema = platform.system()
+        version = platform.version()
+        build = platform.win32_ver()[1] if sistema == "Windows" else ""
+        arquitectura = platform.architecture()[0]
+        return f"{sistema} {version} (build {build}) {arquitectura}"
+    except Exception:
+        return "N/A"
+
 
 #-----------------------inicio-----------------------------
 cfg_file = obtener_ruta_cfg()
@@ -197,14 +239,26 @@ code = settings.get("code","")
 medio = settings.get("medio", "")
 fecha_actual = datetime.now().strftime("%Y%m%d")
 Crear_directorio_salida(directorio_salida)
-hostname = obtener_hostname()
-station = obtener_Estacion(hostname)
 registro_archivos_path = r"C:\DGS\log\archivos_procesados.txt"
 archivos_procesados = cargar_archivos_procesados(registro_archivos_path)
 registros = []
 jig = 1
 version = "1.0"
+caracter_retorno = chr(13)
 
+
+
+grupos_pruebas = {
+    "BT": ["BT PAIRING", "BT ACCEPT", "BT MIC STD Level", "BT MEDIA SETTING", "BT MEDIA TEST", "BT DISCONNECT"],
+    "GPS": ["Read GPS Version", "GPS",],
+    "Android Auto": ["Android Auto", "Android Auto(wire less)"],
+    "Car Play": ["Car Play", "Car Play(wire less)"],
+    "FM/AM": ["FM SEEK STOP", "AM SEEK STOP"],
+    "KEY": ["KEY VOL UP TEST", "KEY VOL DN TEST", "POWER ON TEST", "KEY TUNE UP TEST", "KEY TUNE DN TEST", "KEY TUNE OK TEST", "KEY MUTE TEST", "KEY DISPLAY TEST"],
+}
+
+pruebas_prioritarias = [
+    "Rear Cam Inspection", "FACTORY RESET", "SEAT SEQ", "VISUAL Check"]
 init_info_template= [
     "/*================================================================================",
     "Test Conditions, Measured Value, Lower Limit, Upper Limit, P/F, Sec, Code, Code Lsl, Code Usl, Meas Fine, Code Fine", 
@@ -239,15 +293,14 @@ init_info_template= [
     "WAVEFORM : ",
     "UWB_INST : (null)/(null)/(null)",
     "UWB_INST(Firmware) : (null)",
-    "POWERSUPPLY : //",
-    "PC_CPU : ",
-    "PC_RAM(Available) : ",
-    "PC_RAM_INIT(free) : ",
-    "PC_DISK(C-Drive free/Total) : ",
-    "PC_OS : ",
+    f"PC_CPU : {obtener_pc_cpu()}",
+    f"PC_RAM(Available) : {obtener_pc_ram_available()}",
+    f"PC_RAM_INIT(free) : {obtener_pc_ram_init_free()}",
+    f"PC_DISK(C-Drive free/Total) : {obtener_pc_disk_free_total()}",
+    f"PC_OS : {obtener_pc_os()}",
     "USB_DRIVER_VERSION : ",
     "PC_DISK_Type : ",
-    "JIG : ",
+    f"JIG : {jig}",
     "PROGRAM : ",
     "ENTERPRISE : ",
     "INIFILE : ",
@@ -269,13 +322,8 @@ init_info_template= [
     "PRODCODE : "
 ]
 
-test_info_template = [
-    "#TEST",
-    "PC_DISK_Type : ",
-    
-]
-
 end_info_template = [
+    "",
     "#END",
     "RESULT : {result}",
     "ERROR-CODE : ",
@@ -286,9 +334,7 @@ end_info_template = [
     "//Total : 1 Pass : {pass_count} Fail : {fail_count}",
     "//FAIL_RATE : {fail_rate}%",
     "//PC_RAM_END(free) :",
-    "//SubPartsLife Count",
-    "//SPLC_RF_SWITCHBOX: N/A, 0",
-    "//SPLC_RF_SWITCHBOX_WLAN: N/A, 0"
+    f"{caracter_retorno}"
 ]
 
 for root, dirs, files in os.walk(input_dir):
@@ -311,39 +357,60 @@ for root, dirs, files in os.walk(input_dir):
             try:
                 with open(file_path, mode="r", encoding="ISO-8859-1") as f:
                     csv_reader = csv.reader(f)
-                    next(csv_reader, None) 
+                    next(csv_reader, None)  # Saltar encabezado
                     filas = list(csv_reader)
-                    for fila in reversed(filas):
-                        for col in fila:
-                            if "TEST-TIME" in col.upper():
-                                try:
-                                    testime = col.split(':')[1].strip()
-                                    break
-                                except IndexError:
-                                    testime = "N/A"
-                        if testime is not None:
-                            break
                     
+                    # Procesar cada fila del CSV
+                    test_info_content = []
+                    grupos_utilizados = set()  # Para evitar duplicar encabezados de grupo
+                    pruebas_prioritarias_content = []  
+                    for fila in filas:
+                        if len(fila) < 5:  # Validar filas incompletas
+                            continue
+                            
+                        test_condition = fila[0]
+                        measured_value = fila[1]
+                        lower_limit = fila[2] if fila[2] else "N/A" 
+                        upper_limit = fila[3] if fila[3] else "N/A"  
+                        p_f = fila[3] if fila[3] in ['P', 'F'] else default_result  # Resultado (P/F)
+                        sec = fila[4]  # Tiempo en segundos
+                        
+                        # Crear línea formateada
+                        test_line = (
+                            f"{test_condition}: {measured_value}, {lower_limit}, "
+                            f"{upper_limit}, {p_f}, {sec}, , , , ,"
+                        )
+                        if test_condition in pruebas_prioritarias:
+                            pruebas_prioritarias_content.append(test_line)
+                        else:
+                            grupo = determinar_grupo_prueba(test_condition)
+                            if grupo and grupo not in grupos_utilizados:
+                                test_info_content.append("")
+                                test_info_content.append(f"// << {grupo} Test >>")
+                                grupos_utilizados.add(grupo)
+                            test_info_content.append(test_line)
+                    if pruebas_prioritarias_content:
+                        test_info_content = pruebas_prioritarias_content + [""] + test_info_content
                     resultados_fail = [fila[0] for fila in filas if any("FAIL" in col.upper() for col in fila)]
-                    if resultados_fail:
-                        result = "FAIL"
-                        step = " ".join(resultados_fail)
-                    else:
-                        result = default_result
-                        step = "PASS" if default_result == "PASS" else "N/A"
-                    
-                    init_info = [line.format(barcode=barcode_part, date_str=date_str, formatted_time=formatted_time) for line in init_info_template]
-                    end_info = [line.format(result=result, fail_item=step, test_time=testime, pass_count=1 if result == "PASS" else 0, fail_count=1 if result == "FAIL" else 0, fail_rate=100 if result == "FAIL" else 0) for line in end_info_template]
-                    
-                    # Combinar init_info y end_info
-                    combined_info = init_info + end_info
-                    # Convertir la lista combinada en un solo string
+                    result = "FAIL" if resultados_fail else default_result
+                    step = " ".join(resultados_fail) if resultados_fail else "PASS"
+                    init_info = [line.format(barcode=barcode_part, 
+                                          date_str=date_str, 
+                                          formatted_time=formatted_time) 
+                               for line in init_info_template]
+                    test_info = ["", "#TEST"] + test_info_content
+                    end_info = [line.format(result=result,
+                                         fail_item=step,
+                                         test_time=testime,
+                                         pass_count=1 if result == "PASS" else 0,
+                                         fail_count=1 if result == "FAIL" else 0,
+                                         fail_rate=100 if result == "FAIL" else 0) 
+                              for line in end_info_template]
+                    combined_info = init_info + test_info + end_info
                     combined_record = "\n".join(combined_info)
-                    # Agregar el registro combinado a 'registros'
                     registros.append([combined_record])
             except Exception as e:
                 print(f"Error al procesar el archivo {file_path}: {e}")
             actualizar_registro_archivos(registro_archivos_path, archivos_procesados, file_path)
 print(f"Total de registros procesados: {len(registros)}")
 dividir_y_guardar_por_fecha(registros, directorio_salida, fecha_actual, procesar_todos=True)
-
