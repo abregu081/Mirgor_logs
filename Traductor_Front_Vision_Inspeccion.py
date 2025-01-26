@@ -151,6 +151,12 @@ def obtener_Estacion(hostname):
     estacion = data[-1:]
     return estacion
 
+def modificar_fecha(start_time, formato_entrada="%H:%M:%S"):
+    hora_inicio = datetime.strptime(start_time, formato_entrada)
+    fecha_hora = datetime(2000, 1, 1, hora_inicio.hour, hora_inicio.minute, hora_inicio.second)
+    fecha_ajustada = fecha_hora - timedelta(hours=12)
+    return fecha_ajustada.strftime("%H:%M:%S")
+
 def procesar_archivo(ruta_archivo, hostname, station, mode="prod"):
     registros = []
     try:
@@ -162,9 +168,9 @@ def procesar_archivo(ruta_archivo, hostname, station, mode="prod"):
             encabezado = next(lector)
             primera_fila = next(lector)
 
-            # Extraer datos comunes de la primera fila
+            
             date, barcode, start_time, end_time, tact_time, result = primera_fila[:6]
-            steps_con_ng = []  # Lista para almacenar los pasos con "NG"
+            steps_con_ng = []  
 
             if result == "FAIL":
                 # Procesar todas las filas buscando "NG"

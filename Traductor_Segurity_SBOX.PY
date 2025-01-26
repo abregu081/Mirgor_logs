@@ -158,7 +158,15 @@ def modificar_fecha(start_time, formato_entrada="%H:%M:%S"):
     fecha_ajustada = fecha_hora - timedelta(hours=12)
     return fecha_ajustada.strftime("%H:%M:%S")
 
+def es_fecha_valida(start_time, formato='%H:%M:%S'):
+    try:
+        datetime.strptime(start_time, formato)
+        return True
+    except ValueError:
+        return False
+    
 
+    
 #-----------------------inicio-----------------------------
 cfg_file = obtener_ruta_cfg()
 settings = read_setting(cfg_file)
@@ -179,58 +187,52 @@ registros_totales = []
 
 for carpeta_fecha in os.listdir(input_dir):
     ruta_carpeta_fecha = os.path.join(input_dir, carpeta_fecha)
-    try:
-        if os.path.isdir(ruta_carpeta_fecha) and carpeta_fecha.isdigit() and len(carpeta_fecha) == 6:
-            fecha = "20" + carpeta_fecha
-        else:
-            print(f"Carpeta de fecha no válida {carpeta_fecha}")
-            continue
-        
-        subcarpetas_existentes = False
+    if os.path.isdir(ruta_carpeta_fecha) and carpeta_fecha.isdigit() and len(carpeta_fecha) == 6:
+        fecha = "20" + carpeta_fecha 
         for estado in ["FAIL", "PASS"]:
             carpeta_estado = os.path.join(ruta_carpeta_fecha, estado)
             if os.path.exists(carpeta_estado):
-                subcarpetas_existentes = True
-                for archivo in os.listdir(carpeta_estado):
-                    if archivo.endswith(".csv"):
-                        ruta_archivo = os.path.join(carpeta_estado, archivo)
-                        if ruta_archivo in archivos_procesados:
-                            continue
-                        try:
-                            registros_nuevos = []
-                            with open(ruta_archivo, mode="r", encoding="ISO-8859-1") as f:
-                                csv_reader = csv.reader(f)
-                                next(csv_reader, None)  # Omitir encabezado
-                                fila = next(csv_reader, None)
-                                if fila and len(fila) >= 9:
-                                    try:
-                                        test_name, start_time, total_time, barcode = fila[0], fila[7], fila[9], fila[6]
-                                    except Exception as e:
-                                        print(f"Ocurrió un error al procesar la fila {fila}: {e}")
-                                        continue
-                                    if "PASS" in carpeta_estado:
-                                        step = "PASS"
-                                        result = "PASS"
-                                    elif "FAIL" in carpeta_estado:
+                for subcarpeta in os.listdir(carpeta_estado):
+                    ruta_subcarpeta = os.path.join(carpeta_estado, subcarpeta)
+                    if os.path.isdir(ruta_subcarpeta):
+                        for archivo in os.listdir(ruta_subcarpeta):
+                            if archivo.endswith(".csv"):
+                                ruta_archivo = os.path.join(ruta_subcarpeta, archivo)
+                                if ruta_archivo in archivos_procesados:
+                                    continue
+                                try:
+                                    registros_nuevos = []
+                                    with open(ruta_archivo, mode="r", encoding="ISO-8859-1") as f:
+                                        csv_reader = csv.reader(f)
+                                        next(csv_reader, None)
                                         for fila in csv_reader:
-                                            if "NG" in fila:
-                                                step = fila[0]
-                                                result = "FAIL"
-                                    else:
-                                        step = "UNKNOWN"
-                                        result = "UNKNOWN"
-                                    actualizar_registro_archivos(registro_archivos_path, archivos_procesados, ruta_archivo)
-                                    registros.append([fecha, modificar_fecha(start_time), barcode, step, hostname, station, "1", total_time, result])
-                        except Exception as e:
-                            print(f"Error al procesar el archivo {ruta_archivo}: {e}")
+                                            if len(fila) >= 10:
+                                                try:
+                                                    test_name, start_time, total_time, barcode = fila[0], fila[7], fila[9], fila[6]
+                                                except Exception as e:
+                                                    print(f"Error al procesar la fila{fila}: {e}")
+                                                    continue
+                                                if not es_fecha_valida(start_time):
+                                                    continue
 
-        if not subcarpetas_existentes:
-            print(f"Advertencia: La carpeta de fecha {carpeta_fecha} no contiene subcarpetas 'PASS' o 'FAIL'.")
-            # Opcional: Registrar este evento en un log de omisiones
+                                                if "PASS" in carpeta_estado:
+                                                    step = "PASS"
+                                                    result = "PASS"
+                                                elif "FAIL" in carpeta_estado:
+                                                    for fila in csv_reader:
+                                                        if "NG" in fila:
+                                                            step = fila[0]
+                                                            result = "FAIL"
+                                                else:
+                                                    step = "UNKNOWN"
+                                                    result = "UNKNOWN"
+                                                actualizar_registro_archivos(registro_archivos_path, archivos_procesados, ruta_archivo)
+                                                registros.append([fecha,start_time, barcode, step, hostname, station, "1", total_time, result])
+                                except Exception as e:
+                                    continue
+    else:
+        print(f"Advertencia: {ruta_carpeta_fecha} no es una carpeta de fecha válida.")
 
-    except Exception as e:
-        print(f"Error al procesar la carpeta {carpeta_fecha}: {e}")
-        
 print(f"Total de registros procesados: {len(registros)}")
 dividir_y_guardar_por_fecha(registros, directorio_salida, procesar_todos=True)
 guardar_resultados_completos(directorio_salida)

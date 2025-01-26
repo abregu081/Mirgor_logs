@@ -6,11 +6,11 @@ excludes = ['Tkinter']
 packages = ['os',"csv","sys","re","collections","datetime","socket"]
 
 setup(
- name="Traductor_Upgrade_Sbox",
+ name="Traductor_Segurity_SBOX",
  version="1.0",
- description="Traductor_Upgrade_Sbox",
+ description="Traductor_Segurity_SBOX",
  options = {'build_exe': {'excludes':excludes,'packages':packages,'include_files':includefiles}}, 
- executables = [Executable("Traductor_Upgrade_Sbox.py")],
+ executables = [Executable("Traductor_Segurity_SBOX.py")],
  )
 
 build_exe_options = {
