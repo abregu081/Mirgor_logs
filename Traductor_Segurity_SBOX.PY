@@ -165,7 +165,6 @@ def es_fecha_valida(start_time, formato='%H:%M:%S'):
     except ValueError:
         return False
     
-
     
 #-----------------------inicio-----------------------------
 cfg_file = obtener_ruta_cfg()
@@ -201,7 +200,6 @@ for carpeta_fecha in os.listdir(input_dir):
                                 if ruta_archivo in archivos_procesados:
                                     continue
                                 try:
-                                    registros_nuevos = []
                                     with open(ruta_archivo, mode="r", encoding="ISO-8859-1") as f:
                                         csv_reader = csv.reader(f)
                                         next(csv_reader, None)
@@ -210,7 +208,7 @@ for carpeta_fecha in os.listdir(input_dir):
                                                 try:
                                                     test_name, start_time, total_time, barcode = fila[0], fila[7], fila[9], fila[6]
                                                 except Exception as e:
-                                                    print(f"Error al procesar la fila{fila}: {e}")
+                                                    print(f"Error al procesar la fila {fila}: {e}")
                                                     continue
                                                 if not es_fecha_valida(start_time):
                                                     continue
@@ -218,23 +216,24 @@ for carpeta_fecha in os.listdir(input_dir):
                                                 if "PASS" in carpeta_estado:
                                                     step = "PASS"
                                                     result = "PASS"
+                                                    registros.append([fecha, start_time, barcode, step, hostname, station, "1", total_time, result])
                                                 elif "FAIL" in carpeta_estado:
-                                                    for fila in csv_reader:
-                                                        if "NG" in fila:
-                                                            step = fila[0]
+                                                    for fila_fail in csv_reader:
+                                                        if len(fila_fail) >= 10 and "NG" in fila_fail:
+                                                            step = fila_fail[0]
                                                             result = "FAIL"
+                                                            registros.append([fecha, start_time, barcode, step, hostname, station, "1", total_time, result])
+                                                            break  # Rompemos el bucle después de encontrar el primer "NG" 
                                                 else:
                                                     step = "UNKNOWN"
                                                     result = "UNKNOWN"
+                                                    registros.append([fecha, start_time, barcode, step, hostname, station, "1", total_time, result])
+
                                                 actualizar_registro_archivos(registro_archivos_path, archivos_procesados, ruta_archivo)
-                                                registros.append([fecha,start_time, barcode, step, hostname, station, "1", total_time, result])
                                 except Exception as e:
                                     continue
     else:
         print(f"Advertencia: {ruta_carpeta_fecha} no es una carpeta de fecha válida.")
-
 print(f"Total de registros procesados: {len(registros)}")
 dividir_y_guardar_por_fecha(registros, directorio_salida, procesar_todos=True)
 guardar_resultados_completos(directorio_salida)
-
-
