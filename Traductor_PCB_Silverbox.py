@@ -36,7 +36,7 @@ def read_setting(file):
 
 def obtener_ruta_cfg():
     current_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
-    cfg_file = os.path.join(current_directory, "Setting_PCB_INSPECCION_SBOX.cfg")
+    cfg_file = os.path.join(current_directory, "Setting_PCB_INSPECTION_DCSD.cfg")
     return cfg_file
 
 def Crear_directorio_salida(directorio_salida):
@@ -187,46 +187,38 @@ for carpeta_fecha in os.listdir(input_dir):
         for estado in ["FAIL", "PASS"]:
             carpeta_estado = os.path.join(ruta_carpeta_fecha, estado)
             if os.path.exists(carpeta_estado):
-                # Agregamos el manejo de subdirectorios dentro de carpeta_estado
-                for subdirectorio in os.listdir(carpeta_estado):
-                    ruta_subdirectorio = os.path.join(carpeta_estado, subdirectorio)
-                    if os.path.isdir(ruta_subdirectorio):
-                        for archivo in os.listdir(ruta_subdirectorio):
-                            if archivo.endswith(".csv"):
-                                ruta_archivo = os.path.join(ruta_subdirectorio, archivo)
-                                if ruta_archivo in archivos_procesados:
-                                    continue
-                                try:
-                                    registros_nuevos = []
-                                    with open(ruta_archivo, mode="r", encoding="ISO-8859-1") as f:
-                                        csv_reader = csv.reader(f)
-                                        next(csv_reader, None)  # Omitir encabezado
-                                        fila = next(csv_reader, None)
-                                        if fila and len(fila) >= 12:
-                                            try:
-                                                start_time, total_time, barcode = fila[9], fila[11], fila[8]
-                                            except Exception as e:
-                                                print(f"Ocurrió un error al procesar la fila {fila}: {e}")
-                                                continue
-                                            if "PASS" in carpeta_estado:
-                                                step = "PASS"
-                                                result = "PASS"
-                                            elif "FAIL" in carpeta_estado:
-                                                for fila in csv_reader:
-                                                    if "NG" in fila:
-                                                        step = fila[0]
-                                                        result = "FAIL"
-                                            else:
-                                                step = "UNKNOWN"
-                                                result = "UNKNOWN"
-                                            actualizar_registro_archivos(
-                                                registro_archivos_path, archivos_procesados, ruta_archivo
-                                            )
-                                            registros.append(
-                                                [fecha, start_time, barcode, step, hostname, station, "1", total_time, result]
-                                            )
-                                except Exception as e:
-                                    print(f"Error al procesar el archivo {ruta_archivo}: {e}")
+                for archivo in os.listdir(carpeta_estado):
+                    if archivo.endswith(".csv"):
+                        ruta_archivo = os.path.join(carpeta_estado, archivo)
+                        if ruta_archivo in archivos_procesados:
+                            continue
+                        try:
+                            registros_nuevos = []
+                            with open(ruta_archivo, mode="r", encoding="ISO-8859-1") as f:
+                                csv_reader = csv.reader(f)
+                                next(csv_reader, None)  # Omitir encabezado
+                                fila = next(csv_reader, None) 
+                                if fila and len(fila) >= 11:
+                                    try:
+                                        start_time, total_time, barcode = fila[8], fila[10], fila[7]
+                                    except Exception as e:
+                                        print(f"Ocurrió un error al procesar la fila {fila}: {e}")
+                                        continue
+                                    if "PASS" in carpeta_estado:
+                                        step = "PASS"
+                                        result = "PASS"
+                                    elif "FAIL" in carpeta_estado:
+                                        for fila in csv_reader:
+                                            if "NG" in fila:
+                                                step = fila[0]
+                                                result = "FAIL"
+                                    else:
+                                        step = "UNKNOWN"
+                                        result = "UNKNOWN"
+                                    actualizar_registro_archivos(registro_archivos_path, archivos_procesados,ruta_archivo)
+                                    registros.append([fecha, start_time, barcode, step, hostname, station, "1", total_time, result])
+                        except Exception as e:
+                            print(f"Error al procesar el archivo {ruta_archivo}: {e}")
     except Exception as e:
         print(f"Error al procesar la carpeta {carpeta_fecha}: {e}")
 print(f"Total de registros procesados: {len(registros)}")

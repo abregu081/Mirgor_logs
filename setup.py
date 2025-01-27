@@ -6,11 +6,11 @@ excludes = ['Tkinter']
 packages = ['os',"csv","sys","re","collections","datetime","socket"]
 
 setup(
- name="Traductor_Segurity_SBOX",
+ name="Traductor_PCB_DCSD",
  version="1.0",
- description="Traductor_Segurity_SBOX",
+ description="Traductor_PCB_DCSD",
  options = {'build_exe': {'excludes':excludes,'packages':packages,'include_files':includefiles}}, 
- executables = [Executable("Traductor_Segurity_SBOX.py")],
+ executables = [Executable("Traductor_PCB_DCSD.py")],
  )
 
 build_exe_options = {
