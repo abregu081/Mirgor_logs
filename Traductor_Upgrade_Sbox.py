@@ -83,8 +83,6 @@ def guardar_resultados_completos(directorio_salida):
 def dividir_y_guardar_por_fecha(registros, directorio_salida, procesar_todos=False):
     registros_por_fecha = defaultdict(list)
     resgistros_por_jig = defaultdict(list)
-    
-    # Agrupar los registros por fecha
     for registro in registros:
         hora = registro[1]
         fecha = registro[0]
@@ -92,18 +90,15 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, procesar_todos=Fal
         if procesar_todos or fecha == fecha_actual:
             registros_por_fecha[fecha].append(registro)
             resgistros_por_jig[(fecha,jig)].append(registro)
-
-    
     for (fecha,jig),resgistros_por_jig in resgistros_por_jig.items():
         try:
-            # Validar y convertir las fechas antes de ordenarlas
             registros_jig_ordenados = sorted(
                 resgistros_por_jig, 
                 key=lambda x: datetime.strptime(f"{x[0]} {x[1]}", "%Y%m%d %H:%M:%S")  # Corregido
             )
         except ValueError as e:
             print(f"Error al procesar registros para la fecha {fecha} y jig {jig}: {e}")
-            continue  # Saltar esta iteración si hay un error de formato
+            continue
 
         while True:
             output_file = guardar_log(directorio_salida, fecha, jig)  # Usar el jig dinámicamente
@@ -135,7 +130,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, procesar_todos=Fal
                 os.remove(output_file)  # Eliminar archivo existente
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Date", "Time", "Barcode", "Step","Hostname","Station","Jig","TestTime","Result"])
+                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Planta"])
                     csv_writer.writerows(registros_combinados_ordenados)
                 print(f"Registros combinados y guardados en {output_file}")
                 break
@@ -199,9 +194,8 @@ registros_totales = []
 for carpeta_fecha in os.listdir(input_dir):
     ruta_carpeta_fecha = os.path.join(input_dir, carpeta_fecha)
     try:
-        # Validar que la carpeta contiene un nombre de fecha válida de 6 dígitos (ej. 240411)
         if os.path.isdir(ruta_carpeta_fecha) and carpeta_fecha.isdigit() and len(carpeta_fecha) == 6:
-            fecha = "20" + carpeta_fecha  # Asignar el año con base en el nombre de la carpeta
+            fecha = "20" + carpeta_fecha
         else:
             print(f"Carpeta de fecha no válida {carpeta_fecha}")
             continue

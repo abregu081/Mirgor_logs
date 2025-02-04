@@ -1,7 +1,5 @@
 #Diciembre 2024. Abregu Tomas para proyecto Motrex/Fiat. Mirgor
-
 #version 1.0: primera implementacion filtrado de logs y creacion de estructura de datos
-
 import os
 import csv
 import sys
@@ -14,7 +12,6 @@ import platform
 import psutil
 import platform
 import shutil
-
 #--------------------------------------------------------------------------------------------
                                 #Funciones del programa
 
@@ -180,6 +177,7 @@ def determinar_grupo_prueba(test_condition):
         if any(test_condition.startswith(prueba) for prueba in pruebas):
             return grupo
     return None
+
 
 def obtener_pc_cpu():
     """Obtiene la frecuencia y el número de núcleos de la CPU."""

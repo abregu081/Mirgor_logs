@@ -36,7 +36,7 @@ def read_setting(file):
 
 def obtener_ruta_cfg():
     current_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
-    cfg_file = os.path.join(current_directory, "Setting_Front_Vision.cfg")
+    cfg_file = os.path.join(current_directory, "Setting_DCSD_ASSY6.cfg")
     return cfg_file
 
 def Crear_directorio_salida(directorio_salida):
@@ -45,7 +45,6 @@ def Crear_directorio_salida(directorio_salida):
         print(f"Directorio de salida creado en: {directorio_salida}")
     else:
         print(f"Directorio de salida encontrado en: {directorio_salida}")
-
 
 def guardar_log(directorio, fecha_str, jig):
     nombre_archivo = f"{model}_{medio}_{code}_{fecha_str}_0{jig}.csv"
@@ -105,7 +104,6 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, procesar_todos=Tru
                 print(f"Registros guardados en {output_file}")
                 break
             else:
-                # Si el archivo ya existe, leer los registros existentes, combinar con los nuevos y reordenar
                 with open(output_file, "r", newline='', encoding="utf-8") as infile:
                     csv_reader = csv.reader(infile)
                     registros_existentes = list(csv_reader)[1:]  # Omitir encabezado
@@ -121,6 +119,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, procesar_todos=Tru
                     csv_writer.writerows(registros_combinados_ordenados)
                 print(f"Registros combinados y guardados en {output_file}")
                 break
+
 
 def cargar_archivos_procesados(registro_archivos_path):
     """Carga el registro de los últimos archivos procesados desde un archivo de texto."""
@@ -151,62 +150,13 @@ def obtener_Estacion(hostname):
     estacion = data[-1:]
     return estacion
 
-def modificar_fecha(start_time, formato_entrada="%H:%M:%S"):
-    hora_inicio = datetime.strptime(start_time, formato_entrada)
-    fecha_hora = datetime(2000, 1, 1, hora_inicio.hour, hora_inicio.minute, hora_inicio.second)
-    fecha_ajustada = fecha_hora - timedelta(hours=12)
-    return fecha_ajustada.strftime("%H:%M:%S")
-
-def procesar_archivo(ruta_archivo, hostname, station, mode="prod"):
-    registros = []
-    try:
-        if mode == "dev":
-            print(f"Procesando archivo: {ruta_archivo}")
-        
-        with open(ruta_archivo, mode="r", encoding="utf-8") as archivo_csv:
-            lector = csv.reader(archivo_csv)
-            encabezado = next(lector)
-            primera_fila = next(lector)
-
-            
-            date, barcode, start_time, end_time, tact_time, result = primera_fila[:6]
-            steps_con_ng = []  
-
-            if result == "FAIL":
-                # Procesar todas las filas buscando "NG"
-                for fila in lector:
-                    if len(fila) >= 8 and fila[7] == "NG":  # Verifica si la fila tiene "NG"
-                        steps_con_ng.append(fila[2])  # Agregar el nombre del paso (Step)
-
-                # Concatenar los nombres de los pasos con "-"
-                steps_concatenados = "-".join(steps_con_ng)
-                registros.append([
-                    date,               # "Date"
-                    modificar_fecha(start_time),         # "Time"
-                    barcode,            # "Barcode"
-                    steps_concatenados, # "Steps" concatenados
-                    hostname,           # "Hostname"
-                    station,            # "Station"
-                    "1",                # "Jig" (se asume Jig=1 siempre para este puesto)
-                    tact_time,          # "TestTime"
-                    result              # "Result"
-                ])
-            else:  # Caso PASS
-                registros.append([
-                    date,           # "Date"
-                    modificar_fecha(start_time),     # "Time"
-                    barcode,        # "Barcode"
-                    "PASS",         # "Step" (no hay paso relevante para PASS)
-                    hostname,       # "Hostname"
-                    station,        # "Station"
-                    "1",            # "Jig" (se asume Jig=1 siempre para este puesto)
-                    tact_time,      # "TestTime"
-                    result          # "Result"
-                ])
-        return registros
-    except Exception as e:
-        print(f"Error al procesar el archivo {ruta_archivo}: {e}")
-        return []
+def procesar_tiempo(tiempo):
+    if tiempo:
+        try:
+            return datetime.strptime(tiempo, "%H:%M:%S")
+        except ValueError:
+            return None
+    return None  
 
 #-----------------------inicio-----------------------------
 cfg_file = obtener_ruta_cfg()
@@ -225,38 +175,71 @@ registro_archivos_path = r"C:\DGS\log\archivos_procesados.txt"
 archivos_procesados = cargar_archivos_procesados(registro_archivos_path)
 registros = []
 registros_totales = []
+jig = 1 
 
-for carpeta_fecha in os.listdir(input_dir):
-    ruta_carpeta_fecha = os.path.join(input_dir, carpeta_fecha)
-    try:
-        if os.path.isdir(ruta_carpeta_fecha) and carpeta_fecha.isdigit() and len(carpeta_fecha) == 8:
-            ...
-        else:
-            print(f"Carpeta de fecha no válida {carpeta_fecha}")
-            continue
+for root, dirs, files in os.walk(input_dir):
+    folder_name = os.path.basename(root)  
+    ruta_carpeta_fecha = os.path.join(input_dir, root)
 
-        for estado in ["FAIL", "PASS"]:
-            carpeta_estado = os.path.join(ruta_carpeta_fecha, estado)
-            if os.path.exists(carpeta_estado):
-                for subcarpeta in os.listdir(carpeta_estado):
-                    carpeta_barcode = os.path.join(carpeta_estado, subcarpeta)
-                    if not os.path.isdir(carpeta_barcode):
-                        continue
-                    for archivo in os.listdir(carpeta_barcode):
-                        if archivo.endswith(".csv"):
-                            ruta_archivo = os.path.join(carpeta_barcode, archivo)
-                            if ruta_archivo in archivos_procesados:
-                                continue
-                            try: 
-                                registros_nuevos = procesar_archivo(ruta_archivo, hostname, station)
-                                if registros_nuevos:
-                                    registros_totales.extend(registros_nuevos)
-                                actualizar_registro_archivos(registro_archivos_path, archivos_procesados, ruta_archivo)
-                            except Exception as e:
-                                print(f"Error al procesar el archivo {ruta_archivo}: {e}")
-    except Exception as e:
-        print(f"Error al procesar la carpeta {carpeta_fecha}: {e}")
-print(f"Total de registros procesados: {len(registros_totales)}")
-dividir_y_guardar_por_fecha(registros_totales, directorio_salida, procesar_todos=True)
+    for file in files:
+        if file.endswith(".csv"):
+            file_path = os.path.join(root, file)
+            try:
+                fecha_archivo = datetime.strptime(file.split('.')[0], "%Y%m%d")
+                if file_path in archivos_procesados:
+                    continue
+
+                if mode == "dev":
+                    print(f"Procesando archivo: {file_path}")
+
+                with open(file_path, mode="r", encoding="ISO-8859-1") as f:
+                    csv_reader = csv.reader(f, delimiter=',')
+                    next(csv_reader, None)
+                    last_line_is_empty = False
+                    for row in csv_reader:
+                        # Verificar si es una línea con comas y "NG" al final
+                        if all(cell == "" for cell in row[:-1]) and row[-1] == "NG":
+                            step = "NG"
+                            start_time = row[0]
+                            test_time = row[1]  # Tiempo de prueba
+                            barcode = row[3]    # Barcode
+                            result = "FAIL" 
+                            registros.append([folder_name, start_time, barcode, step, hostname, station, jig, test_time, result, "1"])
+                            continue
+
+                        # Verificar si es una línea de "User interrupt"
+                        if all(cell == "" for cell in row):
+                            last_line_is_empty = True
+                            continue
+                        # Procesar las líneas relevantes
+                        if len(row) > 4 and row[3] and row[12]: 
+                            start_time = row[0]
+                            test_time = row[1]  
+                            barcode = row[3]    
+                            result = row[12]    
+
+                            # Verificar si el archivo está en la carpeta "OK" o "NG"
+                            if "NG" in root:
+                                result = "FAIL" 
+                            elif "OK" in root:
+                                result = "PASS"
+                                step = "PASS"  
+
+                            # No estamos marcando "Tornillo", solo procesamos los registros
+                            step = "PASS"  # Pasos que no sean "Tornillo"
+
+                            # Si la última línea está vacía, esto implica un "User interrupt"
+                            if last_line_is_empty:
+                                step = "User interrupt"
+                                result = "FAIL"
+
+                            print(f"Agregando registro: {[folder_name, start_time, barcode, step, hostname, station, jig, test_time, result, '1']}")
+                            registros.append([folder_name, start_time, barcode, step, hostname, station, jig, test_time, result, "1"])
+
+            except Exception as e:
+                print(f"Error al procesar el archivo {file_path}: {e}")
+
+            actualizar_registro_archivos(registro_archivos_path, archivos_procesados, file_path)
+print(f"Total de registros procesados: {len(registros)}")
+dividir_y_guardar_por_fecha(registros, directorio_salida, procesar_todos=True)
 guardar_resultados_completos(directorio_salida)
-
