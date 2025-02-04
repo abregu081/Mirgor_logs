@@ -6,11 +6,11 @@ excludes = ['Tkinter']
 packages = ['os',"csv","sys","re","collections","datetime","socket"]
 
 setup(
- name="Traductor_PCB_DCSD",
+ name="Traductor_Display_Inspection_LCD",
  version="1.0",
- description="Traductor_PCB_DCSD",
+ description="Traductor_Display_Inspection_LCD",
  options = {'build_exe': {'excludes':excludes,'packages':packages,'include_files':includefiles}}, 
- executables = [Executable("Traductor_PCB_DCSD.py")],
+ executables = [Executable("Traductor_Display_Inspection_LCD.py")],
  )
 
 build_exe_options = {
