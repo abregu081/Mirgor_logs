@@ -1,0 +1,7 @@
+Versión: 2.0
+
+Cambios en la versión 2.0:
+- Segunda versión del Traductor_Update_Sbox.
+- Cambios en el formato de procesamiento de fecha al cambio %H:%M:%S.
+- Cambios realizados incoporando columnas nuevas como Model, Planta y Medio para su Mejor Clasificacion.
+- Deshabilitacion de la funcion Obtener estacion debido a que no se modifico el hostname de la maquina.

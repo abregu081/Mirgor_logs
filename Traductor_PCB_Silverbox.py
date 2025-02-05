@@ -36,7 +36,7 @@ def read_setting(file):
 
 def obtener_ruta_cfg():
     current_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
-    cfg_file = os.path.join(current_directory, "Setting_PCB_INSPECTION_DCSD.cfg")
+    cfg_file = os.path.join(current_directory, "Setting_PCB_INSPECTION_SBOX.cfg")
     return cfg_file
 
 def Crear_directorio_salida(directorio_salida):
@@ -47,7 +47,7 @@ def Crear_directorio_salida(directorio_salida):
         print(f"Directorio de salida encontrado en: {directorio_salida}")
 
 def guardar_log(directorio, fecha_str, jig):
-    nombre_archivo = f"{model}_{medio}_{code}_{fecha_str}_0{jig}.csv"
+    nombre_archivo = f"{model}_{nombre_estacion}_{code}_{fecha_str}_0{jig}.csv"
     output_file = os.path.join(directorio, nombre_archivo)
     output_dir = os.path.dirname(output_file)
     if not os.path.exists(output_dir):
@@ -75,7 +75,7 @@ def guardar_resultados_completos(directorio_salida):
     
     with open(ruta_salida, mode='w', newline='', encoding='utf-8') as archivo_final:
         escritor = csv.writer(archivo_final)
-        escritor.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Planta"])
+        escritor.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Medio","Planta","Modelo"])
         for registro in registros_ordenados:
             escritor.writerow(registro)
     print(f"Archivos combinados, ordenados y guardados en {ruta_salida}")
@@ -100,7 +100,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, procesar_todos=Tru
                 # Si el archivo no existe, crearlo y escribir los registros
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Planta"])
+                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Medio","Planta","Modelo"])
                     csv_writer.writerows(registros_fecha_ordenados)
                 print(f"Registros guardados en {output_file}")
                 break
@@ -116,7 +116,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, procesar_todos=Tru
                 os.remove(output_file)
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Planta"])
+                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Medio","Planta","Modelo"])
                     csv_writer.writerows(registros_combinados_ordenados)
                 print(f"Registros combinados y guardados en {output_file}")
                 break
@@ -176,6 +176,11 @@ archivos_procesados = cargar_archivos_procesados(registro_archivos_path)
 registros = []
 registros_totales = []
 
+planta = settings.get("planta", "")
+nombre_estacion = settings.get("nombre_estacion", "") 
+#Temporal hasta que se cambie el hostname del equipo
+num_estacion = settings.get("num_estacion", "")
+
 for carpeta_fecha in os.listdir(input_dir):
     ruta_carpeta_fecha = os.path.join(input_dir, carpeta_fecha)
     try:
@@ -187,38 +192,51 @@ for carpeta_fecha in os.listdir(input_dir):
         for estado in ["FAIL", "PASS"]:
             carpeta_estado = os.path.join(ruta_carpeta_fecha, estado)
             if os.path.exists(carpeta_estado):
-                for archivo in os.listdir(carpeta_estado):
-                    if archivo.endswith(".csv"):
-                        ruta_archivo = os.path.join(carpeta_estado, archivo)
-                        if ruta_archivo in archivos_procesados:
-                            continue
-                        try:
-                            registros_nuevos = []
-                            with open(ruta_archivo, mode="r", encoding="ISO-8859-1") as f:
-                                csv_reader = csv.reader(f)
-                                next(csv_reader, None)  # Omitir encabezado
-                                fila = next(csv_reader, None) 
-                                if fila and len(fila) >= 11:
-                                    try:
-                                        start_time, total_time, barcode = fila[8], fila[10], fila[7]
-                                    except Exception as e:
-                                        print(f"Ocurrió un error al procesar la fila {fila}: {e}")
-                                        continue
-                                    if "PASS" in carpeta_estado:
-                                        step = "PASS"
-                                        result = "PASS"
-                                    elif "FAIL" in carpeta_estado:
-                                        for fila in csv_reader:
-                                            if "NG" in fila:
-                                                step = fila[0]
+                # Agregamos el manejo de subdirectorios dentro de carpeta_estado
+                for subdirectorio in os.listdir(carpeta_estado):
+                    ruta_subdirectorio = os.path.join(carpeta_estado, subdirectorio)
+                    if os.path.isdir(ruta_subdirectorio):
+                        for archivo in os.listdir(ruta_subdirectorio):
+                            if archivo.endswith(".csv"):
+                                ruta_archivo = os.path.join(ruta_subdirectorio, archivo)
+                                if ruta_archivo in archivos_procesados:
+                                    continue
+                                try:
+                                    registros_nuevos = []
+                                    with open(ruta_archivo, mode="r", encoding="ISO-8859-1") as f:
+                                        csv_reader = csv.reader(f)
+                                        next(csv_reader, None)  # Omitir encabezado
+                                        fila = next(csv_reader, None)
+                                        if fila and len(fila) >= 12:
+                                            try:
+                                                start_time, total_time, barcode = fila[9], fila[11], fila[8]
+                                            except Exception as e:
+                                                print(f"Ocurrió un error al procesar la fila {fila}: {e}")
+                                                continue
+                                            if "PASS" in carpeta_estado:
+                                                step = "PASS"
+                                                result = "PASS"
+                                            elif "FAIL" in carpeta_estado:
+                                                step = "User Interrupt"
                                                 result = "FAIL"
-                                    else:
-                                        step = "UNKNOWN"
-                                        result = "UNKNOWN"
-                                    actualizar_registro_archivos(registro_archivos_path, archivos_procesados,ruta_archivo)
-                                    registros.append([fecha, start_time, barcode, step, hostname, station, "1", total_time, result])
-                        except Exception as e:
-                            print(f"Error al procesar el archivo {ruta_archivo}: {e}")
+                                                encontrado_ng = False
+                                                for fila in csv_reader:
+                                                    if "NG" in fila:
+                                                        step = fila[0]
+                                                        result = "FAIL"
+                                                        encontrado_ng = True
+                                                        break
+                                            else:
+                                                step = "UNKNOWN"
+                                                result = "UNKNOWN"
+                                            actualizar_registro_archivos(
+                                                registro_archivos_path, archivos_procesados, ruta_archivo
+                                            )
+                                            registros.append(
+                                                [fecha, start_time, barcode, step, hostname, num_estacion, "1", total_time, result, medio, planta, model]
+                                            )
+                                except Exception as e:
+                                    print(f"Error al procesar el archivo {ruta_archivo}: {e}")
     except Exception as e:
         print(f"Error al procesar la carpeta {carpeta_fecha}: {e}")
 print(f"Total de registros procesados: {len(registros)}")

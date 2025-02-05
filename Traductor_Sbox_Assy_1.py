@@ -1,7 +1,3 @@
-#Diciembre 2024. Abregu Tomas para proyecto Motrex/Fiat. Mirgor
-
-#version 1.0: primera implementacion filtrado de logs y creacion de estructura de datos
-
 import socket
 import os
 import csv
@@ -62,9 +58,8 @@ def extraer_fecha(folder_name):
         print(f"Error extrayendo fecha: {e}")
         return None
 
-
 def guardar_log(directorio, fecha_str, jig):
-    nombre_archivo = f"{model}_{medio}_{code}_{fecha_str}_0{jig}.csv"
+    nombre_archivo = f"{model}_{nombre_estacion}_{code}_{fecha_str}_0{jig}.csv"
     output_file = os.path.join(directorio, nombre_archivo)
     output_dir = os.path.dirname(output_file)
     if not os.path.exists(output_dir):
@@ -89,7 +84,7 @@ def guardar_resultados_completos(directorio_salida):
     )
     with open(ruta_salida, mode='w', newline='', encoding='utf-8') as archivo_final:
         escritor = csv.writer(archivo_final)
-        escritor.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Planta"])
+        escritor.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Medio","Planta","Modelo"])
         for registro in registros_ordenados:
             escritor.writerow(registro)
     print(f"Archivos combinados, ordenados y guardados en {ruta_salida}")
@@ -113,7 +108,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, procesar_todos=Tru
                 # Si el archivo no existe, crearlo y escribir los registros
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Planta"])
+                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Medio","Planta","Modelo"])
                     csv_writer.writerows(registros_fecha_ordenados)
                 print(f"Registros guardados en {output_file}")
                 break
@@ -130,7 +125,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, procesar_todos=Tru
                 os.remove(output_file)
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Planta"])
+                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Medio","Planta","Modelo"])
                     csv_writer.writerows(registros_combinados_ordenados)
                 print(f"Registros combinados y guardados en {output_file}")
                 break
@@ -182,6 +177,11 @@ archivos_procesados = cargar_archivos_procesados(registro_archivos_path)
 registros = []
 jig = 1
 
+planta = settings.get("planta", "")
+nombre_estacion = settings.get("nombre_estacion", "") 
+#Temporal hasta que se cambie el hostname del equipo
+num_estacion = settings.get("num_estacion", "")
+
 for root, dirs, files in os.walk(input_dir):
     if "OK" in root.upper():
         default_result = "PASS"
@@ -229,7 +229,7 @@ for root, dirs, files in os.walk(input_dir):
                                             else:
                                                 step = "Proceso sin terminar"
                                         registros.append([
-                                            date, start_time, barcode, step, hostname, station, jig, cycle_time, default_result
+                                            date, start_time, barcode, step, hostname, num_estacion, jig, cycle_time, default_result, medio, planta, model
                                         ])
                     except Exception as e:
                         print(f"Error al procesar el archivo {ruta_archivo}: {e}")

@@ -41,7 +41,7 @@ def read_setting(file):
 
 def obtener_ruta_cfg():
     current_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
-    cfg_file = os.path.join(current_directory, "settings.cfg")
+    cfg_file = os.path.join(current_directory, "Setting_Manualnspection.cfg")
     return cfg_file
 
 def Crear_directorio_salida(directorio_salida):
@@ -96,7 +96,7 @@ def guardar_resultados_completos(directorio_salida):
     )
     with open(ruta_salida, mode='w', newline='', encoding='utf-8') as archivo_final:
         escritor = csv.writer(archivo_final)
-        escritor.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Planta"])
+        escritor.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Medio","Planta","Modelo"])
         for registro in registros_ordenados:
             escritor.writerow(registro)
     print(f"Archivos combinados, ordenados y guardados en {ruta_salida}")
@@ -126,7 +126,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, fecha_actual, proc
                 # Si el archivo no existe, crearlo y escribir los registros
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Planta"])
+                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Medio","Planta","Modelo"])
                     csv_writer.writerows(registros_fecha_ordenados)
                 print(f"Registros guardados en {output_file}")
                 break
@@ -144,7 +144,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, fecha_actual, proc
                 os.remove(output_file)
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Planta"])
+                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Medio","Planta","Modelo"])
                     csv_writer.writerows(registros_combinados_ordenados)
                 print(f"Registros combinados y guardados en {output_file}")
                 break
@@ -173,6 +173,8 @@ def actualizar_registro_archivos(registro_archivos_path, archivos_procesados, ar
         for archivo in archivos_procesados:
             file.write(f"{archivo}\n")
 
+
+#--------------funcion para obtener el numero de la estacion // ahora esta desactivada debido a que se esta realizando pruebas
 def obtener_Estacion(hostname):
     data = hostname
     estacion = data[-1:]
@@ -195,6 +197,11 @@ registro_archivos_path = r"C:\DGS\log\archivos_procesados.txt"
 archivos_procesados = cargar_archivos_procesados(registro_archivos_path)
 registros = []
 jig = 1
+planta = settings.get("planta", "")
+
+#Temporal hasta que se cambie el hostname del equipo
+num_estacion = settings.get("num_estacion", "")
+
 
 for root, dirs, files in os.walk(input_dir):
     if "PASS" in root.upper():
@@ -236,7 +243,7 @@ for root, dirs, files in os.walk(input_dir):
                     else:
                         result = default_result
                         step = "PASS" if default_result == "PASS" else "N/A"
-                    registros.append([date_str, formatted_time, barcode_part, step, hostname,station, jig ,testime,result])
+                    registros.append([date_str, formatted_time, barcode_part, step, hostname,num_estacion, jig ,testime,result, medio, planta, model])
             except Exception as e:
                 print(f"Error al procesar el archivo {file_path}: {e}")
             actualizar_registro_archivos(registro_archivos_path, archivos_procesados, file_path)

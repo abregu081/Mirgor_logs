@@ -48,7 +48,7 @@ def Crear_directorio_salida(directorio_salida):
 
 
 def guardar_log(directorio, fecha_str, jig):
-    nombre_archivo = f"{model}_{medio}_{code}_{fecha_str}_0{jig}.csv"
+    nombre_archivo = f"{model}_{nombre_estacion}_{code}_{fecha_str}_0{jig}.csv"
     output_file = os.path.join(directorio, nombre_archivo)
     output_dir = os.path.dirname(output_file)
     if not os.path.exists(output_dir):
@@ -76,7 +76,7 @@ def guardar_resultados_completos(directorio_salida):
     
     with open(ruta_salida, mode='w', newline='', encoding='utf-8') as archivo_final:
         escritor = csv.writer(archivo_final)
-        escritor.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Planta"])
+        escritor.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Medio","Planta","Modelo"])
         for registro in registros_ordenados:
             escritor.writerow(registro)
     print(f"Archivos combinados, ordenados y guardados en {ruta_salida}")
@@ -100,7 +100,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, procesar_todos=Tru
                 # Si el archivo no existe, crearlo y escribir los registros
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Planta"])
+                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Medio","Planta","Modelo"])
                     csv_writer.writerows(registros_fecha_ordenados)
                 print(f"Registros guardados en {output_file}")
                 break
@@ -117,7 +117,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, procesar_todos=Tru
                 os.remove(output_file)
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Planta"])
+                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Medio","Planta","Modelo"])
                     csv_writer.writerows(registros_combinados_ordenados)
                 print(f"Registros combinados y guardados en {output_file}")
                 break
@@ -186,10 +186,10 @@ def procesar_archivo(ruta_archivo, hostname, station, mode="prod"):
                     barcode,            # "Barcode"
                     steps_concatenados, # "Steps" concatenados
                     hostname,           # "Hostname"
-                    station,            # "Station"
+                    num_estacion,            # "Station"
                     "1",                # "Jig" (se asume Jig=1 siempre para este puesto)
                     tact_time,          # "TestTime"
-                    result              # "Result"
+                    result, medio, planta,model              # "Result"
                 ])
             else:  # Caso PASS
                 registros.append([
@@ -198,10 +198,10 @@ def procesar_archivo(ruta_archivo, hostname, station, mode="prod"):
                     barcode,        # "Barcode"
                     "PASS",         # "Step" (no hay paso relevante para PASS)
                     hostname,       # "Hostname"
-                    station,        # "Station"
+                    num_estacion,        # "Station"
                     "1",            # "Jig" (se asume Jig=1 siempre para este puesto)
                     tact_time,      # "TestTime"
-                    result          # "Result"
+                    result, medio, planta,model          # "Result"
                 ])
         return registros
     except Exception as e:
@@ -225,6 +225,11 @@ registro_archivos_path = r"C:\DGS\log\archivos_procesados.txt"
 archivos_procesados = cargar_archivos_procesados(registro_archivos_path)
 registros = []
 registros_totales = []
+
+planta = settings.get("planta", "")
+nombre_estacion = settings.get("nombre_estacion", "") 
+#Temporal hasta que se cambie el hostname del equipo
+num_estacion = settings.get("num_estacion", "")
 
 for carpeta_fecha in os.listdir(input_dir):
     ruta_carpeta_fecha = os.path.join(input_dir, carpeta_fecha)

@@ -86,7 +86,7 @@ def extraer_fecha_y_hora(folder_name, file_name):
     return date_str, time_str, barcode_part, jig
 
 def guardar_log(directorio, fecha_str, jig):
-    nombre_archivo = f"{model}_{medio}_{code}_{fecha_str}_0{jig}.csv"
+    nombre_archivo = f"{model}_{nombre_estacion}_{code}_{fecha_str}_0{jig}.csv"
     output_file = os.path.join(directorio, nombre_archivo)
     output_dir = os.path.dirname(output_file)
     if not os.path.exists(output_dir):
@@ -112,7 +112,7 @@ def guardar_resultados_completos(directorio_salida):
     )
     with open(ruta_salida, mode='w', newline='', encoding='utf-8') as archivo_final:
         escritor = csv.writer(archivo_final)
-        escritor.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Planta"])
+        escritor.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Medio","Planta","Modelo"])
         for registro in registros_ordenados:
             escritor.writerow(registro)
     print(f"Archivos combinados, ordenados y guardados en {ruta_salida}")
@@ -149,7 +149,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, fecha_actual, proc
                 # Si el archivo no existe, crearlo y escribir los registros
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Planta"])
+                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Medio","Planta","Modelo"])
                     csv_writer.writerows(registros_jig_ordenados)
                 print(f"Registros guardados en {output_file}")
                 break
@@ -172,7 +172,7 @@ def dividir_y_guardar_por_fecha(registros, directorio_salida, fecha_actual, proc
                 os.remove(output_file)  # Eliminar archivo existente
                 with open(output_file, "w", newline='', encoding="utf-8") as outfile:
                     csv_writer = csv.writer(outfile)
-                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Planta"])
+                    csv_writer.writerow(["Fecha", "Hora", "Barcode", "Detalle","Hostname","Box","Jig","TestTime","Resultado","Medio","Planta","Modelo"])
                     csv_writer.writerows(registros_combinados_ordenados)
                 print(f"Registros combinados y guardados en {output_file}")
                 break
@@ -224,6 +224,11 @@ registro_archivos_path = r"C:\DGS\log\archivos_procesados.txt"
 archivos_procesados = cargar_archivos_procesados(registro_archivos_path)
 registros = []
 
+planta = settings.get("planta", "")
+nombre_estacion = settings.get("nombre_estacion", "") 
+#Temporal hasta que se cambie el hostname del equipo
+num_estacion = settings.get("num_estacion", "")
+
 for root, dirs, files in os.walk(input_dir):
     if "PASS" in root.upper():
         default_result = "PASS"
@@ -264,7 +269,7 @@ for root, dirs, files in os.walk(input_dir):
                     else:
                         result = default_result
                         step = "PASS" if default_result == "PASS" else "N/A"
-                    registros.append([date_str, formatted_time, barcode_part, step, hostname,station, jig ,testime,result])
+                    registros.append([date_str, formatted_time, barcode_part, step, hostname,num_estacion, jig ,testime,result,medio,planta,model])
             except Exception as e:
                 print(f"Error al procesar el archivo {file_path}: {e}")
             actualizar_registro_archivos(registro_archivos_path, archivos_procesados, file_path)

@@ -1,0 +1,7 @@
+Versión: 2.0
+
+Cambios en la versión 2.0:
+- Se espera la correccion para el zonetime de corea
+- Segunda versión del Traductor_Main_Inspection.
+- Se agregaron nuevas columnas para un mejor procesamiento y analisis.
+- Deshabilitacion de la funcion Obtener estacion debido a que no se modifico el hostname de la maquina.

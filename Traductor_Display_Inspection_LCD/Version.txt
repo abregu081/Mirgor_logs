@@ -1,0 +1,6 @@
+Versión: 1.0
+
+Cambios en la versión 1.0:
+- Traductor_Display_Inspection_LCD.
+- Se agregaron nuevas columnas para un mejor procesamiento y analisis.
+- Deshabilitacion de la funcion Obtener estacion debido a que no se modifico el hostname de la maquina.
