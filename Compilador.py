@@ -33,5 +33,5 @@ def guardar_resultados_completos(directorio_salida):
     
     print(f"Archivo combinado guardado en: {ruta_salida}")
 
-# Ejemplo de uso
-guardar_resultados_completos(r"D:\abregu076")
+#Usar para ajustar los datos
+guardar_resultados_completos(r"E:\abregu076")

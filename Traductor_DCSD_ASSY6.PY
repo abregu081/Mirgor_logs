@@ -207,10 +207,20 @@ for root, dirs, files in os.walk(input_dir):
                             registros.append([folder_name, start_time, barcode, step, hostname, station, jig, test_time, result, "1"])
                             continue
 
+                        # Verificar si es una línea con solo "OK" al final
+                        if all(cell == "" for cell in row[:-1]) and row[-1] == "OK":
+                            step = "N/A"  # No asignamos un paso específico para "OK"
+                            result = "FAIL"  # Lo marcamos como "FAIL"
+                            start_time = row[0]
+                            barcode = row[3]
+                            registros.append([folder_name, start_time, barcode, step, hostname, station, jig, test_time, result, "1"])
+                            continue
+
                         # Verificar si es una línea de "User interrupt"
                         if all(cell == "" for cell in row):
                             last_line_is_empty = True
                             continue
+
                         # Procesar las líneas relevantes
                         if len(row) > 4 and row[3] and row[12]: 
                             start_time = row[0]
@@ -220,26 +230,29 @@ for root, dirs, files in os.walk(input_dir):
 
                             # Verificar si el archivo está en la carpeta "OK" o "NG"
                             if "NG" in root:
-                                result = "FAIL" 
-                            elif "OK" in root:
-                                result = "PASS"
-                                step = "PASS"  
+                                result = "FAIL"  # Si está en la carpeta "NG", el resultado es FAIL
+                                step = "N/A"  # Aquí no tenemos paso definido
+                                registros.append([folder_name, start_time, barcode, step, hostname, station, jig, test_time, result, "1"])
 
-                            # No estamos marcando "Tornillo", solo procesamos los registros
-                            step = "PASS"  # Pasos que no sean "Tornillo"
+                            elif "OK" in root:
+                                # En la carpeta "OK" los registros deberían ser "PASS"
+                                result = "PASS"
+                                step = "PASS"  # Paso de éxito
+                                registros.append([folder_name, start_time, barcode, step, hostname, station, jig, test_time, result, "1"])
 
                             # Si la última línea está vacía, esto implica un "User interrupt"
                             if last_line_is_empty:
                                 step = "User interrupt"
                                 result = "FAIL"
-
-                            print(f"Agregando registro: {[folder_name, start_time, barcode, step, hostname, station, jig, test_time, result, '1']}")
-                            registros.append([folder_name, start_time, barcode, step, hostname, station, jig, test_time, result, "1"])
+                                # Aseguramos que no agreguemos este registro si ya se ha agregado uno
+                                if [folder_name, start_time, barcode, step, hostname, station, jig, test_time, result, "1"] not in registros:
+                                    registros.append([folder_name, start_time, barcode, step, hostname, station, jig, test_time, result, "1"])
 
             except Exception as e:
                 print(f"Error al procesar el archivo {file_path}: {e}")
 
             actualizar_registro_archivos(registro_archivos_path, archivos_procesados, file_path)
+
 print(f"Total de registros procesados: {len(registros)}")
 dividir_y_guardar_por_fecha(registros, directorio_salida, procesar_todos=True)
 guardar_resultados_completos(directorio_salida)
