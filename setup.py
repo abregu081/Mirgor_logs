@@ -1,12 +1,12 @@
 from cx_Freeze import setup, Executable
 
 # Datos de la versión
-version = "1.0"
+version = "2.0"
 changelog = """
-Cambios en la versión 1.0:
-- Traductor_Display_Inspection_II.
+Cambios en la versión 2.0:
+- Traductor_Front_Vision_Inspeccion.
 - Deshabilitacion de la funcion Obtener estacion debido a que no se modifico el hostname de la maquina.
-- Cambios a realizar a futuro: Agregacion del log servicios
+- Arreglo horario corea del sur
 """
 # Escribir la versión y cambios en un archivo
 with open("Version.txt", "w", encoding="utf-8") as version_file:
@@ -20,9 +20,9 @@ excludes = ['Tkinter']
 packages = ['os', 'csv', 'sys', 're', 'collections', 'datetime', 'socket']
 
 setup(
-    name="Traductor_Display_Inspection_II",
+    name="Traductor_Front_Vision_Inspeccion",
     version=version,
-    description="Traductor_Display_Inspection_II",
+    description="Traductor_Front_Vision_Inspeccion",
     options={'build_exe': {'excludes': excludes, 'packages': packages, 'include_files': includefiles}},
-    executables=[Executable("Traductor_Display_Inspection_II.py")]
+    executables=[Executable("Traductor_Front_Vision_Inspeccion.py")]
 )
