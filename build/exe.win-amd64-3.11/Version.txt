@@ -1,5 +1,6 @@
 Versión: 1.0
 
 Cambios en la versión 1.0:
-- Traductor_Sbox_Assy_1.
+- Traductor_Display_Inspection_II.
 - Deshabilitacion de la funcion Obtener estacion debido a que no se modifico el hostname de la maquina.
+- Cambios a realizar a futuro: Agregacion del log servicios

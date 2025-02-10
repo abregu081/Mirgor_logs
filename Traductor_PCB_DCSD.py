@@ -226,7 +226,7 @@ for carpeta_fecha in os.listdir(input_dir):
                                                 if "PASS" in carpeta_estado:
                                                     step = "PASS"
                                                     result = "PASS"
-                                                    registros.append([fecha, start_time, barcode, step, hostname, station, "1", total_time, result])
+                                                    registros.append([fecha, start_time, barcode, step, hostname, num_estacion, "1", total_time, result, medio, planta, model])
                                                 
                                                 # Si es un archivo en "FAIL", verificar si encontramos NG
                                                 elif "FAIL" in carpeta_estado:
@@ -235,10 +235,10 @@ for carpeta_fecha in os.listdir(input_dir):
                                                     
                                                     # Revisar las filas siguientes en busca de "NG" para modificar el step
                                                     for fila_fail in csv_reader:
-                                                        if len(fila_fail) >= 12 and "NG" in fila_fail:
+                                                        if len(fila_fail) >= 10 and "NG" in fila_fail:
                                                             step = fila_fail[0]
                                                             result = "FAIL"
-                                                            registros.append([fecha, start_time, barcode, step, hostname, station, "1", total_time, result])
+                                                            registros.append([fecha, start_time, barcode, step, hostname, num_estacion, "1", total_time, result, medio, planta, model])
                                                             step_found = True
                                                             break
 

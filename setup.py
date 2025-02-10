@@ -4,8 +4,9 @@ from cx_Freeze import setup, Executable
 version = "1.0"
 changelog = """
 Cambios en la versión 1.0:
-- Traductor_Sbox_Assy_1.
+- Traductor_Display_Inspection_II.
 - Deshabilitacion de la funcion Obtener estacion debido a que no se modifico el hostname de la maquina.
+- Cambios a realizar a futuro: Agregacion del log servicios
 """
 # Escribir la versión y cambios en un archivo
 with open("Version.txt", "w", encoding="utf-8") as version_file:
@@ -19,9 +20,9 @@ excludes = ['Tkinter']
 packages = ['os', 'csv', 'sys', 're', 'collections', 'datetime', 'socket']
 
 setup(
-    name="Traductor_Sbox_Assy_1",
+    name="Traductor_Display_Inspection_II",
     version=version,
-    description="Traductor_Sbox_Assy_1",
+    description="Traductor_Display_Inspection_II",
     options={'build_exe': {'excludes': excludes, 'packages': packages, 'include_files': includefiles}},
-    executables=[Executable("Traductor_Sbox_Assy_1.py")]
+    executables=[Executable("Traductor_Display_Inspection_II.py")]
 )

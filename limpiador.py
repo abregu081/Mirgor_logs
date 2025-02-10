@@ -1,4 +1,6 @@
 import csv
+import pandas as pd
+
 
 def ensure_min_columns(row, min_columns=12):
     """
