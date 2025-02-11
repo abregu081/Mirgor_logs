@@ -4,7 +4,7 @@ from cx_Freeze import setup, Executable
 version = "2.0"
 changelog = """
 Cambios en la versión 2.0:
-- Traductor_Front_Vision_Inspeccion.
+- Traductor_Main_Inspection.
 - Deshabilitacion de la funcion Obtener estacion debido a que no se modifico el hostname de la maquina.
 - Arreglo horario corea del sur
 """
@@ -20,9 +20,9 @@ excludes = ['Tkinter']
 packages = ['os', 'csv', 'sys', 're', 'collections', 'datetime', 'socket']
 
 setup(
-    name="Traductor_Front_Vision_Inspeccion",
+    name="Traductor_Main_Inspection",
     version=version,
-    description="Traductor_Front_Vision_Inspeccion",
+    description="Traductor_Main_Inspection",
     options={'build_exe': {'excludes': excludes, 'packages': packages, 'include_files': includefiles}},
-    executables=[Executable("Traductor_Front_Vision_Inspeccion.py")]
+    executables=[Executable("Traductor_Main_Inspection.py")]
 )

@@ -1,6 +1,6 @@
 Versión: 2.0
 
 Cambios en la versión 2.0:
-- Traductor_Front_Vision_Inspeccion.
+- Traductor_Main_Inspection.
 - Deshabilitacion de la funcion Obtener estacion debido a que no se modifico el hostname de la maquina.
 - Arreglo horario corea del sur

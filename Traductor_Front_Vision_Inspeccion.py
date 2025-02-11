@@ -182,7 +182,7 @@ def procesar_archivo(ruta_archivo, hostname, station, mode="prod"):
                 steps_concatenados = "-".join(steps_con_ng)
                 registros.append([
                     date,               # "Date"
-                    modificar_fecha(start_time),         # "Time"
+                    start_time,         # "Time"
                     barcode,            # "Barcode"
                     steps_concatenados, # "Steps" concatenados
                     hostname,           # "Hostname"
@@ -194,7 +194,7 @@ def procesar_archivo(ruta_archivo, hostname, station, mode="prod"):
             else:  # Caso PASS
                 registros.append([
                     date,           # "Date"
-                    modificar_fecha(start_time),     # "Time"
+                    start_time,     # "Time"
                     barcode,        # "Barcode"
                     "PASS",         # "Step" (no hay paso relevante para PASS)
                     hostname,       # "Hostname"
